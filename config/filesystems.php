@@ -71,12 +71,12 @@ return [
 
     'links' => [
         public_path('storage') => storage_path('app/public'),
-        public_path('images') => storage_path('app/images'),
-        public_path('payment_proof') => storage_path('app/payment_proof'),
-        public_path('ktp_image') => storage_path('app/ktp_image'),
-        public_path('surat_rujukan') => storage_path('app/surat_rujukan'),
-        public_path('bpjs_image') => storage_path('app/bpjs_image'),
-        public_path('announcement_image') => storage_path('app/announcement_image'),  
+        // public_path('images') => storage_path('app/images'),
+        // public_path('payment_proof') => storage_path('app/payment_proof'),
+        // public_path('ktp_image') => storage_path('app/ktp_image'),
+        // public_path('surat_rujukan') => storage_path('app/surat_rujukan'),
+        // public_path('bpjs_image') => storage_path('app/bpjs_image'),
+        // public_path('announcement_image') => storage_path('app/announcement_image'),  
     ],
 
 ];

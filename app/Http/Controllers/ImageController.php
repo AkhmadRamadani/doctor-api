@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ImageController extends Controller
 {
@@ -35,7 +36,9 @@ class ImageController extends Controller
      */
      public function getAccessibleImageURL($image_path)
      {
-         $image_url = asset( $image_path);
+        // create accessibe image with uri
+        $image_url = asset('storage/' . $image_path);
+        
  
          return $image_url;
      }

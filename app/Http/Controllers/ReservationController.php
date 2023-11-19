@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ReservationController extends Controller
 {
@@ -34,7 +35,7 @@ class ReservationController extends Controller
                 $this->validate($request, [
                     'payment_proof' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                 ]);
-                $image_path = $request->file('payment_proof')->store('payment_proof');
+                $image_path = Storage::disk('public')->put('payment_proof', $request->file('payment_proof'));
 
                 $payment_proof = $image_path;
             } else {
@@ -45,7 +46,7 @@ class ReservationController extends Controller
                 $this->validate($request, [
                     'ktp_image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                 ]);
-                $image_path = $request->file('ktp_image')->store('ktp_image');
+                $image_path = Storage::disk('public')->put('ktp_image', $request->file('ktp_image'));
 
                 $ktp_image = $image_path;
             } else {
@@ -56,7 +57,7 @@ class ReservationController extends Controller
                 $this->validate($request, [
                     'surat_rujukan' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                 ]);
-                $image_path = $request->file('surat_rujukan')->store('surat_rujukan');
+                $image_path = Storage::disk('public')->put('surat_rujukan', $request->file('surat_rujukan'));
 
                 $surat_rujukan = $image_path;
             } else {
@@ -67,7 +68,7 @@ class ReservationController extends Controller
                 $this->validate($request, [
                     'bpjs_image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                 ]);
-                $image_path = $request->file('bpjs_image')->store('bpjs_image');
+                $image_path = Storage::disk('public')->put('bpjs_image', $request->file('bpjs_image'));
 
                 $bpjs_card = $image_path;
             } else {
@@ -144,9 +145,13 @@ class ReservationController extends Controller
                 ->select('reservations.*',  'users.name as doctor_name', 'employees.qualification', 'places.name as place_name')
                 ->get();
         } else {
+            // status is array of status
+            // so get where status in array
+            
+            $data_status = explode(',', $status);
             $reservation_data = DB::table('reservations')
                 ->where('patient_id', $patient_id)
-                ->where('status', $status)
+                ->whereIn('status', $data_status)
                 ->leftJoin('schedules', 'reservations.schedule_id', '=', 'schedules.id')
                 ->leftJoin('employees', 'schedules.employee_id', '=', 'employees.id')
                 ->leftJoin('users', 'employees.user_id', '=', 'users.id')
@@ -186,6 +191,7 @@ class ReservationController extends Controller
         return response()->json([
             'status_code' => 200,
             'data' => $reservation_data,
+            'status' => $status,
             'message' => 'Success get my reservations',
         ]);
     }
@@ -423,6 +429,7 @@ class ReservationController extends Controller
     {
         $reservation_id = $request->reservation_id;
         $status = $request->status;
+        $reason = $request->reason;
 
         $reservation_data = DB::table('reservations')
             ->where('id', $reservation_id)
@@ -453,7 +460,7 @@ class ReservationController extends Controller
             $message = 'Reservasi anda disetujui oleh Dokter ' . $doctor_data->name . ' di ' . $schedule_data->schedule_date . ' ' . $schedule_data->schedule_time . ' - ' . $schedule_data->schedule_time_end . ' di ' . $schedule_data->name . '. Silahkan datang ke tempat praktek sesuai jadwal yang telah ditentukan';
         } else {
             $title = 'Reservasi Ditolak';
-            $message = 'Maaf, reservasi anda pada ' . $schedule_data->schedule_date . ' ' . $schedule_data->schedule_time . ' - ' . $schedule_data->schedule_time_end . ' di ' . $schedule_data->name . ' telah ditolak oleh Dokter ' . $doctor_data->name . '. Silahkan coba reservasi di waktu lain';
+            $message = 'Maaf, reservasi anda pada ' . $schedule_data->schedule_date . ' ' . $schedule_data->schedule_time . ' - ' . $schedule_data->schedule_time_end . ' di ' . $schedule_data->name . ' telah ditolak oleh Dokter ' . $doctor_data->name . ' dengan alasan ' . $reason;
         }
 
         $data_notification = [
@@ -466,11 +473,12 @@ class ReservationController extends Controller
             ->update([
                 'approve' => 1,
                 'status' => $status,
+                'reject_reason' => $reason,
                 'updated_at' => date('Y-m-d H:i:s'),
             ]);
 
         if (!$reservation) {
-           
+
             return response()->json([
                 'status_code' => 500,
                 'message' => 'Failed to approve or reject reservation',
@@ -486,7 +494,7 @@ class ReservationController extends Controller
             'notifiable_id' => $patient_data->user_id,
             'data' => $data_notification,
         ]);
-        
+
 
         return response()->json([
             'status_code' => 200,
@@ -515,6 +523,31 @@ class ReservationController extends Controller
         return response()->json([
             'status_code' => 200,
             'message' => 'Success update reservation status',
+        ]);
+    }
+
+    // get remaining quota
+    public function getRemainingQuota(Request $request)
+    {
+        $schedule_id = $request->id;
+
+        $schedule_data = DB::table('schedules')
+            ->where('id', $schedule_id)
+            ->first();
+
+        $reservation_data = DB::table('reservations')
+            ->where('schedule_id', $schedule_id)
+            ->where(function ($query) {
+                $query->where('status', 1)
+                    ->orWhere('status', 2);
+            })->count();
+
+        $remaining_quota = $schedule_data->qty - $reservation_data;
+
+        return response()->json([
+            'status_code' => 200,
+            'data' => $remaining_quota,
+            'message' => 'Success get remaining quota',
         ]);
     }
 }

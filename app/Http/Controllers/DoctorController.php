@@ -165,13 +165,43 @@ class DoctorController extends Controller
             $employee_id = $employee_data->id;
 
             $limit = request()->query('limit') ?? 10;
+            $tgl = request()->query('from_date');
+
 
             $schedules = DB::table('schedules')
-                ->where('schedules.employee_id', $employee_id)
-                ->join('employees', 'schedules.employee_id', '=', 'employees.id')
-                ->join('places', 'schedules.place_id', '=', 'places.id')
-                ->select('schedules.id', 'schedules.schedule_date', 'schedules.schedule_time', 'schedules.schedule_time_end', 'schedules.qty', 'places.name as place_name')
-                ->paginate($limit);
+            ->where('schedules.employee_id', $employee_id)
+            ->join('employees', 'schedules.employee_id', '=', 'employees.id')
+            ->join('places', 'schedules.place_id', '=', 'places.id')
+            ->select('schedules.id', 'schedules.schedule_date', 'schedules.schedule_time', 'schedules.schedule_time_end', 'schedules.qty', 'places.name as place_name')
+            ->orderBy('schedules.schedule_date', 'desc')
+            ->paginate($limit);
+
+            // if ($tgl != null) {
+            //     $schedules = DB::table('schedules')
+            //         ->where('schedules.employee_id', $employee_id)
+            //         ->whereDate('schedules.schedule_date', '>=', $tgl)
+            //         ->join('employees', 'schedules.employee_id', '=', 'employees.id')
+            //         ->join('places', 'schedules.place_id', '=', 'places.id')
+            //         ->select('schedules.id', 'schedules.schedule_date', 'schedules.schedule_time', 'schedules.schedule_time_end', 'schedules.qty', 'places.name as place_name')
+            //         ->paginate($limit);
+            // } else {
+            //     $schedules = DB::table('schedules')
+            //         ->where('schedules.employee_id', $employee_id)
+            //         ->join('employees', 'schedules.employee_id', '=', 'employees.id')
+            //         ->join('places', 'schedules.place_id', '=', 'places.id')
+            //         ->select('schedules.id', 'schedules.schedule_date', 'schedules.schedule_time', 'schedules.schedule_time_end', 'schedules.qty', 'places.name as place_name')
+            //         ->paginate($limit);
+            // }
+
+            // if date is more than given date
+            // add 'is_expired' field to true
+            foreach ($schedules as $key => $value) {
+                if ($value->schedule_date < date('Y-m-d')) {
+                    $value->is_expired = true;
+                } else {
+                    $value->is_expired = false;
+                }
+            }
 
 
             return response()->json([

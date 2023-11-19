@@ -72,6 +72,7 @@ Route::middleware('auth:sanctum')->group(
                 Route::get('/today_total', 'getTodayReservationsTotal');
                 Route::get('/all', 'getAllReservations');
                 Route::post('/approve', 'approveOrRejectReservation');
+                Route::get('/quota/{id}', 'getRemainingQuota');
             }
         );
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class AnnouncementController extends Controller
 {
@@ -92,7 +93,7 @@ class AnnouncementController extends Controller
                 $this->validate($request, [
                     'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                 ]);
-                $image_path = $request->file('image')->store('announcement_image');
+                $image_path = Storage::disk('public')->put('announcement_image', $request->file('image'));
             }
 
             $announcement = DB::table('announcements')->insert([
@@ -139,7 +140,7 @@ class AnnouncementController extends Controller
                 $this->validate($request, [
                     'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                 ]);
-                $image_path = $request->file('image')->store('announcement_image');
+                $image_path = Storage::disk('public')->put('announcement_image', $request->file('image'));
             }
 
             $data_to_be_updated = [];
